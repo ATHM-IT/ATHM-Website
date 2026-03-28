@@ -73,8 +73,9 @@ export const Navbar: React.FC = () => {
 
             <div style={{ display: 'flex', gap: '2rem', color: 'var(--color-text-muted)' }}>
                 <a onClick={() => navigate('/')} style={{ color: 'var(--color-text-main)', cursor: 'pointer' }}>Products</a>
-                <a onClick={() => navigate('/solutions')} style={{ cursor: 'pointer' }}>Solutions</a>
-                <a style={{ cursor: 'pointer' }}>Support</a>
+                <a onClick={() => navigate('/about')} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>About Us</a>
+                <a onClick={() => navigate('/solutions')} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>Solutions</a>
+                <a style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>Support</a>
             </div>
             <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--color-gold)', alignItems: 'center' }}>
                 <Search size={24} style={{ cursor: 'pointer' }} />

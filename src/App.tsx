@@ -19,6 +19,7 @@ import { Profile } from './pages/Profile';
 import { Wishlist } from './pages/Wishlist';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Solutions } from './pages/Solutions';
+import { AboutUs } from './pages/AboutUs';
 import { Checkout } from './pages/Checkout';
 import { OrderSuccess } from './pages/OrderSuccess';
 import { BrandPage } from './pages/BrandPage';
@@ -196,6 +197,7 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/about" element={<AboutUs />} />
                 <Route path="/solutions" element={<Solutions />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/order-success" element={<OrderSuccess />} />
