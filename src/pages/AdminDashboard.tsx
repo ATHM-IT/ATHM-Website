@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Users, DollarSign, Package, FileText, CheckCircle, Smartphone, Edit, Trash2, X, Plus, Settings } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import { isSupabaseConfigured } from '../supabaseClient';
 import { productService } from '../services/ProductService';
 import type { Product } from '../types';
 
@@ -35,19 +36,52 @@ export const AdminDashboard: React.FC = () => {
     };
 
     const loadOrders = async () => {
-        const { data, error } = await supabase
-            .from('orders')
-            .select(`
-                *,
-                order_items (
+        if (isSupabaseConfigured) {
+            const { data, error } = await supabase
+                .from('orders')
+                .select(`
                     *,
-                    products (name)
-                )
-            `)
-            .order('created_at', { ascending: false });
+                    order_items (
+                        *,
+                        product:products (*)
+                    )
+                `)
+                .order('created_at', { ascending: false });
 
-        if (data) setOrders(data);
-        if (error) console.error("Error loading orders:", error);
+            if (data) setOrders(data);
+            if (error) console.error("Error loading orders:", error);
+        } else {
+            const mockOrdersRaw = localStorage.getItem('athm_mock_orders');
+            if (mockOrdersRaw) {
+                const parsed = JSON.parse(mockOrdersRaw);
+                setOrders(parsed.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+            }
+        }
+    };
+
+    const updateOrderStatus = async (orderId: string, newStatus: string) => {
+        if (isSupabaseConfigured) {
+            const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+            if (!error) {
+                loadOrders();
+                if (selectedOrder && selectedOrder.id === orderId) {
+                    setSelectedOrder({ ...selectedOrder, status: newStatus });
+                }
+            } else {
+                alert('Error updating status: ' + error.message);
+            }
+        } else {
+            const mockOrdersRaw = localStorage.getItem('athm_mock_orders');
+            if (mockOrdersRaw) {
+                const parsed = JSON.parse(mockOrdersRaw);
+                const updated = parsed.map((o: any) => o.id === orderId ? { ...o, status: newStatus } : o);
+                localStorage.setItem('athm_mock_orders', JSON.stringify(updated));
+                setOrders(updated.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+                if (selectedOrder && selectedOrder.id === orderId) {
+                    setSelectedOrder({ ...selectedOrder, status: newStatus });
+                }
+            }
+        }
     };
 
     const loadProducts = async () => {
@@ -458,7 +492,7 @@ export const AdminDashboard: React.FC = () => {
                                     <td style={{ padding: '1rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
                                         {order.order_items?.length} items
                                         <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-                                            {order.order_items?.map((item: any) => item.products?.name).join(', ').slice(0, 30)}...
+                                            {order.order_items?.map((item: any) => item.product?.name || item.products?.name).join(', ').slice(0, 30)}...
                                         </div>
                                     </td>
                                     <td style={{ padding: '1rem', display: 'flex', gap: '10px' }}>
@@ -639,18 +673,29 @@ export const AdminDashboard: React.FC = () => {
                                 <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
                                     {new Date(selectedOrder.created_at).toLocaleString()}
                                 </div>
-                                <span style={{
-                                    padding: '4px 8px',
-                                    borderRadius: '4px',
-                                    background: selectedOrder.status === 'paid' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                                    color: selectedOrder.status === 'paid' ? '#34d399' : '#fbbf24',
-                                    textTransform: 'capitalize',
-                                    fontSize: '0.85rem',
-                                    marginTop: '0.5rem',
-                                    display: 'inline-block'
-                                }}>
-                                    {selectedOrder.status}
-                                </span>
+                                <select 
+                                    value={selectedOrder.status}
+                                    onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                                    style={{
+                                        marginTop: '0.5rem',
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid var(--glass-border)',
+                                        color: selectedOrder.status === 'paid' ? '#34d399' : 
+                                               selectedOrder.status === 'shipped' ? '#3b82f6' : 
+                                               selectedOrder.status === 'delivered' ? '#10b981' : '#fbbf24',
+                                        textTransform: 'capitalize',
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="pending" style={{ color: 'black' }}>Pending</option>
+                                    <option value="paid" style={{ color: 'black' }}>Paid</option>
+                                    <option value="shipped" style={{ color: 'black' }}>Shipped</option>
+                                    <option value="delivered" style={{ color: 'black' }}>Delivered</option>
+                                </select>
                             </div>
                         </div>
 
@@ -683,7 +728,7 @@ export const AdminDashboard: React.FC = () => {
                                     <tbody>
                                         {selectedOrder.order_items?.map((item: any) => (
                                             <tr key={item.id} style={{ borderTop: '1px solid var(--glass-border)' }}>
-                                                <td style={{ padding: '0.8rem' }}>{item.products?.name || 'Unknown Product'}</td>
+                                                <td style={{ padding: '0.8rem' }}>{item.product?.name || item.products?.name || 'Unknown Product'}</td>
                                                 <td style={{ padding: '0.8rem', textAlign: 'right' }}>{item.quantity}</td>
                                                 <td style={{ padding: '0.8rem', textAlign: 'right' }}>R {Number(item.price_at_purchase).toFixed(2)}</td>
                                                 <td style={{ padding: '0.8rem', textAlign: 'right' }}>R {(Number(item.price_at_purchase) * item.quantity).toFixed(2)}</td>
