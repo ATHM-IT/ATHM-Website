@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/currency';
 import { Package, ChevronDown, CheckCircle, Clock, Truck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Order, OrderItem } from '../types';
+import type { Order } from '../types';
 
 export const OrderHistory: React.FC = () => {
     const { user } = useAuth();
