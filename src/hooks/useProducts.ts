@@ -66,7 +66,9 @@ export const useProducts = () => {
                     brand: item.brand,
                     stock: item.stock,
                     supplierId: item.supplier_id || 'unknown',
-                    imageUrl: item.image_url || 'https://via.placeholder.com/400'
+                    imageUrl: (!item.image_url || item.image_url.includes('placeholder.com') || item.image_url.includes('1542204165-65bf26472b9b')) 
+                               ? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.brand || item.name || 'Tech')}&background=random&color=fff&font-size=0.33&size=500` 
+                               : item.image_url
                 }));
 
             setProducts(mappedProducts);

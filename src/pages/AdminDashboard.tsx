@@ -628,6 +628,16 @@ export const AdminDashboard: React.FC = () => {
                                     />
                                 </div>
                             </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Image URL (Optional)</label>
+                                <input
+                                    type="text"
+                                    placeholder="Paste an image link from Google..."
+                                    value={currentProduct.imageUrl || ''}
+                                    onChange={e => setCurrentProduct({ ...currentProduct, imageUrl: e.target.value })}
+                                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white' }}
+                                />
+                            </div>
                             <button
                                 type="submit"
                                 style={{
