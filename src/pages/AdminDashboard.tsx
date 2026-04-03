@@ -4,10 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { 
     Package, Settings, Users, DollarSign, Upload, Edit, Trash2, X, Plus, Smartphone, FileText, CheckCircle, Calculator, ShieldCheck, TrendingUp
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { PricingEngine } from '../utils/pricing';
 import type { PriceBreakdown } from '../utils/pricing';
-import { isSupabaseConfigured } from '../supabaseClient';
 import { productService } from '../services/ProductService';
 import type { Product } from '../types';
 
