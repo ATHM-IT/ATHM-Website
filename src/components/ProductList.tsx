@@ -11,7 +11,7 @@ interface ProductListProps {
 
 export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) => {
     const { products, loading, error } = useProducts();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const [localProducts, setLocalProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
 
