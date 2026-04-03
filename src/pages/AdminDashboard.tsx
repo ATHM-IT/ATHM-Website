@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
-    Package, Settings, Users, DollarSign, Upload, Edit, Trash2, X, Plus, Smartphone, FileText, CheckCircle, Calculator, ShieldCheck, TrendingUp
+    Package, Settings, Users, DollarSign, Upload, Edit, Trash2, X, Plus, Smartphone, FileText, CheckCircle, Calculator, ShieldCheck, TrendingUp, Sparkles
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { PricingEngine } from '../utils/pricing';
@@ -17,6 +17,8 @@ export const AdminDashboard: React.FC = () => {
     const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle');
     const [products, setProducts] = useState<Product[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isEnriching, setIsEnriching] = useState(false);
+    const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
     const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
@@ -163,6 +165,60 @@ export const AdminDashboard: React.FC = () => {
             setDragActive(true);
         } else if (e.type === "dragleave") {
             setDragActive(false);
+        }
+    };
+
+    const handleAutoEnrich = async () => {
+        setIsEnriching(true);
+        try {
+            // Find up to 50 products that have placeholder images
+            const { data: emptyProducts, error } = await supabase
+                .from('products')
+                .select('*')
+                .or('image_url.ilike.%unsplash.com%,image_url.ilike.%placeholder.com%,image_url.ilike.%ui-avatars%')
+                .limit(50);
+            
+            if (error) throw error;
+
+            if (!emptyProducts || emptyProducts.length === 0) {
+                alert("No products found that need enrichment!");
+                setIsEnriching(false);
+                return;
+            }
+
+            setEnrichProgress({ current: 0, total: emptyProducts.length });
+            
+            let count = 0;
+            for (const product of emptyProducts) {
+                try {
+                    const query = `${product.brand} ${product.name}`.trim();
+                    const res = await fetch(`/api/enrich?query=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        await supabase
+                            .from('products')
+                            .update({
+                                description: data.description,
+                                image_url: data.image_url
+                            })
+                            .eq('id', product.id);
+                    }
+                } catch (e) {
+                    console.error("Enrich failed for", product.name);
+                }
+                count++;
+                setEnrichProgress({ current: count, total: emptyProducts.length });
+            }
+            
+            alert(`Completed enrichment cycle! Enhanced ${count} products.`);
+            loadProducts();
+        } catch (error: any) {
+            console.error("Enrichment process failed:", error);
+            alert("Enrichment failed: " + error.message);
+        } finally {
+            setIsEnriching(false);
+            setEnrichProgress({ current: 0, total: 0 });
         }
     };
 
@@ -413,6 +469,25 @@ export const AdminDashboard: React.FC = () => {
                                 <Package size={24} color="var(--color-gold)" /> Product Inventory
                             </h2>
                             <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button
+                                    onClick={handleAutoEnrich}
+                                    disabled={isEnriching}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        background: 'rgba(139, 92, 246, 0.2)',
+                                        border: '1px solid #8b5cf6',
+                                        color: '#c4b5fd',
+                                        borderRadius: '4px',
+                                        cursor: isEnriching ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontWeight: 'bold',
+                                        opacity: isEnriching ? 0.6 : 1
+                                    }}>
+                                    <Sparkles size={16} /> 
+                                    {isEnriching ? `Enriching... (${enrichProgress.current}/${enrichProgress.total})` : 'AI Enrich 50 Items'}
+                                </button>
                                 <button style={{
                                     padding: '0.5rem 1rem',
                                     background: 'rgba(255,255,255,0.1)',
