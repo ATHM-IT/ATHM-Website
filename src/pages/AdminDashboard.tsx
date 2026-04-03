@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Users, DollarSign, Package, FileText, CheckCircle, Smartphone, Edit, Trash2, X, Plus, Settings } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { 
+    Package, Settings, Users, DollarSign, Upload, Edit, Trash2, X, Plus, Smartphone, FileText, CheckCircle, Calculator, ShieldCheck, TrendingUp
+} from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import { PricingEngine } from '../utils/pricing';
+import type { PriceBreakdown } from '../utils/pricing';
 import { isSupabaseConfigured } from '../supabaseClient';
 import { productService } from '../services/ProductService';
 import type { Product } from '../types';
@@ -21,66 +25,109 @@ export const AdminDashboard: React.FC = () => {
     const [view, setView] = useState<'products' | 'orders' | 'settings'>('products');
     const [selectedSupplier, setSelectedSupplier] = useState<string>('syntech');
     const [globalMarkup, setGlobalMarkup] = useState<number>(20);
+    const [vatRate, setVatRate] = useState<number>(15);
+    const [cardVariable, setCardVariable] = useState<number>(3.2);
+    const [cardFixed, setCardFixed] = useState<number>(2.0);
+    
+    // Simulator states
+    const [simCost, setSimCost] = useState<string>('');
+    const [simResults, setSimResults] = useState<PriceBreakdown | null>(null);
+
+    const [stats, setStats] = useState({
+        totalRevenue: 0,
+        activeUsers: 0,
+        productsCount: 0,
+        revenueTrend: '+0%',
+        usersTrend: '+0%'
+    });
 
     useEffect(() => {
         loadProducts();
         loadOrders();
-        loadSettings();
+        loadStats();
+        const fetchSettings = async () => {
+            const { data, error } = await supabase.from('store_settings').select('*').single();
+            if (!error && data) {
+                setGlobalMarkup(data.global_markup_percentage || 20);
+                if (data.vat_rate) setVatRate(data.vat_rate);
+                if (data.payfast_card_variable) setCardVariable(data.payfast_card_variable);
+                if (data.payfast_card_fixed) setCardFixed(data.payfast_card_fixed);
+            }
+        };
+        fetchSettings();
     }, []);
 
-    const loadSettings = async () => {
-        const { data } = await supabase.from('store_settings').select('global_markup_percentage').eq('id', 1).single();
-        if (data) {
-            setGlobalMarkup(data.global_markup_percentage);
+    const handleSimulate = () => {
+        const cost = parseFloat(simCost);
+        if (!isNaN(cost)) {
+            const results = PricingEngine.getPriceAudit(cost, globalMarkup);
+            setSimResults(results);
+        }
+    };
+
+    const loadStats = async () => {
+        if (!isSupabaseConfigured) return;
+
+        try {
+            // 1. Total Revenue
+            const { data: revenueData } = await supabase
+                .from('orders')
+                .select('total_amount')
+                .in('status', ['paid', 'shipped', 'delivered']);
+            
+            const totalRevenue = revenueData?.reduce((acc: number, order: any) => acc + Number(order.total_amount), 0) || 0;
+
+            // 2. Active Users (Profiles count)
+            const { count: usersCount } = await supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true });
+
+            // 3. Products Count
+            const { count: productsCount } = await supabase
+                .from('products')
+                .select('*', { count: 'exact', head: true });
+
+            setStats({
+                totalRevenue,
+                activeUsers: usersCount || 0,
+                productsCount: productsCount || 0,
+                revenueTrend: '+12%', // Keep trend mock for now or calculate from past month
+                usersTrend: '+5%'
+            });
+        } catch (error) {
+            console.error("Error loading stats:", error);
         }
     };
 
     const loadOrders = async () => {
-        if (isSupabaseConfigured) {
-            const { data, error } = await supabase
-                .from('orders')
-                .select(`
-                    *,
-                    order_items (
-                        *,
-                        product:products (*)
-                    )
-                `)
-                .order('created_at', { ascending: false });
+        if (!isSupabaseConfigured) return;
 
-            if (data) setOrders(data);
-            if (error) console.error("Error loading orders:", error);
-        } else {
-            const mockOrdersRaw = localStorage.getItem('athm_mock_orders');
-            if (mockOrdersRaw) {
-                const parsed = JSON.parse(mockOrdersRaw);
-                setOrders(parsed.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-            }
-        }
+        const { data, error } = await supabase
+            .from('orders')
+            .select(`
+                *,
+                order_items (
+                    *,
+                    product:products (*)
+                )
+            `)
+            .order('created_at', { ascending: false });
+
+        if (data) setOrders(data);
+        if (error) console.error("Error loading orders:", error);
     };
 
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
-        if (isSupabaseConfigured) {
-            const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-            if (!error) {
-                loadOrders();
-                if (selectedOrder && selectedOrder.id === orderId) {
-                    setSelectedOrder({ ...selectedOrder, status: newStatus });
-                }
-            } else {
-                alert('Error updating status: ' + error.message);
+        if (!isSupabaseConfigured) return;
+
+        const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+        if (!error) {
+            loadOrders();
+            if (selectedOrder && selectedOrder.id === orderId) {
+                setSelectedOrder({ ...selectedOrder, status: newStatus });
             }
         } else {
-            const mockOrdersRaw = localStorage.getItem('athm_mock_orders');
-            if (mockOrdersRaw) {
-                const parsed = JSON.parse(mockOrdersRaw);
-                const updated = parsed.map((o: any) => o.id === orderId ? { ...o, status: newStatus } : o);
-                localStorage.setItem('athm_mock_orders', JSON.stringify(updated));
-                setOrders(updated.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-                if (selectedOrder && selectedOrder.id === orderId) {
-                    setSelectedOrder({ ...selectedOrder, status: newStatus });
-                }
-            }
+            alert('Error updating status: ' + error.message);
         }
     };
 
@@ -90,12 +137,13 @@ export const AdminDashboard: React.FC = () => {
             .select('*')
             .order('name');
 
-            if (data) {
-                const mappedProducts: Product[] = data.map((item: any) => ({
-                    id: item.id,
-                    name: item.name,
+        if (data) {
+            const mappedProducts: Product[] = data.map((item: any) => ({
+                id: item.id,
+                name: item.name,
                 description: item.description,
                 basePrice: item.price,
+                price: PricingEngine.calculateFinalPrice(item.price),
                 category: item.category,
                 categoryType: 'Hardware',
                 subCategory: 'General',
@@ -103,7 +151,7 @@ export const AdminDashboard: React.FC = () => {
                 stock: item.stock,
                 imageUrl: item.image_url,
                 isSpecial: false,
-                supplierId: 'sup_system'
+                supplierId: item.supplier_id || 'unknown'
             }));
             setProducts(mappedProducts);
         }
@@ -227,10 +275,30 @@ export const AdminDashboard: React.FC = () => {
                 gap: '1.5rem',
                 marginBottom: '3rem'
             }}>
-                <StatCard icon={<DollarSign size={24} color="#10b981" />} label="Total Revenue" value="$45,231.89" trend="+12%" />
-                <StatCard icon={<Users size={24} color="#3b82f6" />} label="Active Users" value="1,234" trend="+5%" />
-                <StatCard icon={<Package size={24} color="#f59e0b" />} label="Products Live" value={products.length.toString()} trend="+2" />
-                <StatCard icon={<Smartphone size={24} color="#8b5cf6" />} label="Mobile Visits" value="68%" trend="+8%" />
+                <StatCard 
+                    icon={<DollarSign size={24} color="#10b981" />} 
+                    label="Total Revenue" 
+                    value={`R ${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    trend={stats.revenueTrend} 
+                />
+                <StatCard 
+                    icon={<Users size={24} color="#3b82f6" />} 
+                    label="Active Users" 
+                    value={stats.activeUsers.toString()} 
+                    trend={stats.usersTrend} 
+                />
+                <StatCard 
+                    icon={<Package size={24} color="#f59e0b" />} 
+                    label="Products Live" 
+                    value={stats.productsCount.toString()} 
+                    trend="+2" 
+                />
+                <StatCard 
+                    icon={<Smartphone size={24} color="#8b5cf6" />} 
+                    label="Mobile Visits" 
+                    value="68%" 
+                    trend="+8%" 
+                />
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
@@ -440,9 +508,9 @@ export const AdminDashboard: React.FC = () => {
                     }}>
                         <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>System Status</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <StatusItem label="Database" status="Local Mode" color="#f59e0b" />
-                            <StatusItem label="Supplier Feeds" status="Syncing..." color="var(--color-text-muted)" />
-                            <StatusItem label="Payment Gateway" status="Test Mode" color="#f59e0b" />
+                            <StatusItem label="Database" status={isSupabaseConfigured ? "Connected (Supabase)" : "Local Mode"} color={isSupabaseConfigured ? "#10b981" : "#f59e0b"} />
+                            <StatusItem label="Supplier Feeds" status="Operational" color="#10b981" />
+                            <StatusItem label="Payment Gateway" status="Mock Integration" color="#f59e0b" />
                             <StatusItem label="Email Service" status="Operational" />
                         </div>
                     </div>
@@ -518,36 +586,141 @@ export const AdminDashboard: React.FC = () => {
                     {orders.length === 0 && <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>No orders found.</div>}
                 </div>
             ) : (
-                <div style={{ background: 'var(--glass-bg)', padding: '2rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-                    <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Settings size={24} color="var(--color-gold)" /> Store Settings
-                    </h2>
-                    <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '500px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Global Markup Percentage (%)</label>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+                    <div style={{ background: 'var(--glass-bg)', padding: '2rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+                        <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Settings size={24} color="var(--color-gold)" /> Store Pricing Settings
+                        </h2>
+                        <div style={{ display: 'grid', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>Global Markup (%)</label>
                                 <input
                                     type="number"
-                                    min="0"
                                     value={globalMarkup}
                                     onChange={(e) => setGlobalMarkup(parseFloat(e.target.value) || 0)}
-                                    style={{ flex: 1, padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white' }}
+                                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white' }}
                                 />
-                                <button
-                                    onClick={async () => {
-                                        const { error } = await supabase.from('store_settings').upsert({ id: 1, global_markup_percentage: globalMarkup });
-                                        if (error) alert('Failed to save settings: ' + error.message);
-                                        else alert('Settings saved successfully!');
-                                    }}
-                                    style={{ padding: '0.8rem 1.5rem', background: 'var(--color-gold)', color: 'black', fontWeight: 'bold', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-                                >
-                                    Save
-                                </button>
                             </div>
-                            <p style={{ marginTop: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                                This percentage is automatically added to the cost price of all products displayed on the storefront.
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>VAT Rate (%)</label>
+                                    <input
+                                        type="number"
+                                        value={vatRate}
+                                        onChange={(e) => setVatRate(parseFloat(e.target.value) || 0)}
+                                        style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--color-text-muted)' }}>PayFast Variable (%)</label>
+                                    <input
+                                        type="number"
+                                        value={cardVariable}
+                                        step="0.01"
+                                        onChange={(e) => setCardVariable(parseFloat(e.target.value) || 0)}
+                                        style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={async () => {
+                                    const { error } = await supabase.from('store_settings').upsert({ 
+                                        id: 1, 
+                                        global_markup_percentage: globalMarkup,
+                                        vat_rate: vatRate,
+                                        payfast_card_variable: cardVariable,
+                                        payfast_card_fixed: cardFixed
+                                    });
+                                    if (error) alert('Failed to save: ' + error.message);
+                                    else alert('Settings saved successfully!');
+                                }}
+                                style={{ padding: '1rem', background: 'var(--color-gold)', color: 'black', fontWeight: 'bold', borderRadius: '4px', border: 'none', cursor: 'pointer', marginTop: '1rem' }}
+                            >
+                                Save Settings
+                            </button>
+                        </div>
+
+                        {/* Tier Visualization */}
+                        <div style={{ marginTop: '2.5rem', paddingTop: '2.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--color-gold)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <TrendingUp size={20} /> Active Tiered Pricing Strategy
+                            </h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Budget (&lt; R1k)</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>30% Markup</div>
+                                </div>
+                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Consumer (R1k-R10k)</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>18% Markup</div>
+                                </div>
+                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Premium (R10k-R20k)</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>12% Markup</div>
+                                </div>
+                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Enthusiast (&gt; R20k)</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>8% Markup</div>
+                                </div>
+                            </div>
+                            <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                                * Tiers are automatically applied based on Syntech supplier cost.
                             </p>
                         </div>
+                    </div>
+
+                    {/* Margin Simulator */}
+                    <div style={{ background: 'rgba(212, 175, 55, 0.05)', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+                        <h2 style={{ marginBottom: '1.5rem', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--color-gold)' }}>
+                            <Calculator size={20} /> Profit & Margin Simulator
+                        </h2>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+                            Verify your final customer price and net profit after VAT and PayFast fees.
+                        </p>
+                        
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
+                            <input
+                                type="number"
+                                placeholder="Syntech Cost (Excl. VAT)"
+                                value={simCost}
+                                onChange={(e) => setSimCost(e.target.value)}
+                                style={{ flex: 1, padding: '0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-gold)', borderRadius: '4px', color: 'white' }}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSimulate()}
+                            />
+                            <button 
+                                onClick={handleSimulate}
+                                style={{ padding: '0.8rem 1.2rem', background: 'var(--color-gold)', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                Audit
+                            </button>
+                        </div>
+
+                        {simResults && (
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                                    <span style={{ color: 'var(--color-text-muted)' }}>Markup Tier Applied</span>
+                                    <span style={{ color: 'var(--color-gold)', fontWeight: 'bold' }}>{simResults.markupPercentage}%</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                                    <span style={{ color: 'var(--color-text-muted)' }}>Customer Total (Inc. VAT)</span>
+                                    <span style={{ color: 'white', fontWeight: 'bold' }}>R {simResults.finalPrice.toFixed(2)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                                    <span style={{ color: 'var(--color-text-muted)' }}>PayFast Fee (Inc. VAT)</span>
+                                    <span style={{ color: '#ef4444' }}>- R {simResults.feeAmount.toFixed(2)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                                    <span style={{ color: 'var(--color-text-muted)' }}>Net Profit (Clean)</span>
+                                    <span style={{ color: '#10b981', fontWeight: 'bold' }}>+ R {simResults.netProfit.toFixed(2)}</span>
+                                </div>
+                                <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <ShieldCheck color="#10b981" size={20} />
+                                    <span style={{ fontSize: '0.85rem', color: '#10b981' }}>Margin Protected: You receive R { (simResults.netProfit + simResults.supplierCost).toFixed(2) } (Excl. VAT)</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

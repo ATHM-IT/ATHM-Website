@@ -155,7 +155,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleSpeci
                         <AnimatedPrice price={price} prefix="R " />
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>
-                        Excl. VAT
+                        Incl. VAT & Fees
                     </div>
                 </div>
             </Link>

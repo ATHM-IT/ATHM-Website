@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ProductCard } from './ProductCard';
 import { useProducts } from '../hooks/useProducts';
 import { Search, Filter } from 'lucide-react';
@@ -10,8 +11,22 @@ interface ProductListProps {
 
 export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) => {
     const { products, loading, error } = useProducts();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [localProducts, setLocalProducts] = useState<Product[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+
+    // Sync search query with URL param
+    useEffect(() => {
+        const query = searchParams.get('search');
+        if (query !== null) {
+            setSearchQuery(query);
+            // Scroll to products if searching
+            if (query) {
+                const element = document.getElementById('products');
+                element?.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (!loading && products) {
@@ -42,7 +57,8 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
             ) : true;
 
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase()));
                 
             return matchesCategory && matchesSearch;
         });

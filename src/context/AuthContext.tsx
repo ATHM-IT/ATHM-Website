@@ -56,11 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             return () => subscription.unsubscribe();
         } else {
-            // Mock Auth Fallback
-            const storedUser = localStorage.getItem('athm_user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            }
             setIsLoading(false);
         }
     }, []);
@@ -79,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return {
             id: user.id,
-            name: profile?.full_name || user.user_metadata.name || email.split('@')[0],
+            name: profile?.full_name || user.user_metadata?.name || email.split('@')[0],
             email: email,
             avatar_url: profile?.avatar_url,
             wishlist: [], // Will be populated by fetchWishlist
@@ -106,25 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
             if (error) throw error;
         } else {
-            mockLogin(email);
+            throw new Error('Supabase not configured or password missing');
         }
     };
-
-    const mockLogin = (email: string) => {
-        // Check for specific admin email or domain
-        const isAdmin = email.endsWith('@athm.com') || email === 'admin@admin.com';
-
-        const mockUser: User = {
-            id: crypto.randomUUID(),
-            name: email.split('@')[0],
-            email: email,
-            avatar_url: undefined,
-            wishlist: [],
-            isAdmin: isAdmin
-        };
-        setUser(mockUser);
-        localStorage.setItem('athm_user', JSON.stringify(mockUser));
-    }
 
     const signup = async (name: string, email: string, password?: string) => {
         if (isSupabaseConfigured && password) {
@@ -139,71 +118,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
             if (error) throw error;
         } else {
-            mockSignup(name, email);
+            throw new Error('Supabase not configured or password missing');
         }
     };
-
-    const mockSignup = (name: string, email: string) => {
-        const newUser: User = {
-            id: crypto.randomUUID(),
-            name: name,
-            email: email,
-            wishlist: []
-        };
-        setUser(newUser);
-        localStorage.setItem('athm_user', JSON.stringify(newUser));
-    }
 
     const logout = async () => {
         if (isSupabaseConfigured) {
             await supabase.auth.signOut();
         }
         setUser(null);
-        localStorage.removeItem('athm_user');
     };
 
     const addToWishlist = async (productId: string) => {
-        if (!user) return;
+        if (!user || !isSupabaseConfigured) return;
 
-        if (isSupabaseConfigured) {
-            const { error } = await supabase
-                .from('wishlist_items')
-                .insert({ user_id: user.id, product_id: productId });
+        const { error } = await supabase
+            .from('wishlist_items')
+            .insert({ user_id: user.id, product_id: productId });
 
-            if (!error) {
-                setUser(prev => prev ? ({ ...prev, wishlist: [...prev.wishlist, productId] }) : null);
-            }
-        } else {
-            // Fallback
-            const updatedWishlist = [...user.wishlist, productId];
-            const updatedUser = { ...user, wishlist: updatedWishlist };
-            setUser(updatedUser);
-            localStorage.setItem('athm_user', JSON.stringify(updatedUser));
+        if (!error) {
+            setUser(prev => prev ? ({ ...prev, wishlist: [...prev.wishlist, productId] }) : null);
         }
     };
 
     const removeFromWishlist = async (productId: string) => {
-        if (!user) return;
+        if (!user || !isSupabaseConfigured) return;
 
-        if (isSupabaseConfigured) {
-            const { error } = await supabase
-                .from('wishlist_items')
-                .delete()
-                .eq('user_id', user.id)
-                .eq('product_id', productId);
+        const { error } = await supabase
+            .from('wishlist_items')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('product_id', productId);
 
-            if (!error) {
-                setUser(prev => prev ? ({ ...prev, wishlist: prev.wishlist.filter(id => id !== productId) }) : null);
-            }
-        } else {
-            const updatedWishlist = user.wishlist.filter(id => id !== productId);
-            const updatedUser = { ...user, wishlist: updatedWishlist };
-            setUser(updatedUser);
-            localStorage.setItem('athm_user', JSON.stringify(updatedUser));
+        if (!error) {
+            setUser(prev => prev ? ({ ...prev, wishlist: prev.wishlist.filter(id => id !== productId) }) : null);
         }
     };
 
     const refreshProfile = async () => {
+        if (!isSupabaseConfigured) return;
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             const updatedUser = await mapSessionToUser(session);

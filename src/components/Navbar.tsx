@@ -11,6 +11,8 @@ export const Navbar: React.FC = () => {
     const { toggleEditing } = useEditor();
     const navigate = useNavigate();
     const [logoPosition, setLogoPosition] = useState({ x: 20, y: 20 });
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         // Listen for theme changes from the customizer
@@ -30,6 +32,15 @@ export const Navbar: React.FC = () => {
         window.addEventListener('theme-change', handleThemeChange as EventListener);
         return () => window.removeEventListener('theme-change', handleThemeChange as EventListener);
     }, []);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            // Navigate to home with search query param
+            navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+            setIsSearchOpen(false);
+        }
+    };
 
     return (
         <nav style={{
@@ -59,26 +70,47 @@ export const Navbar: React.FC = () => {
                     alt="ATHM Logo"
                     style={{ height: '50px', objectFit: 'contain', border: '1px solid var(--color-gold)', borderRadius: '4px' }}
                 />
-                {/* Optional Text fallback or tagline if needed, can be toggled later */}
-                <span style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    color: 'var(--color-gold)',
-                    letterSpacing: '2px',
-                    display: 'none' // Hiding text in favor of image
-                }}>
-                    ATHM
-                </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '2rem', color: 'var(--color-text-muted)' }}>
-                <a onClick={() => navigate('/')} style={{ color: 'var(--color-text-main)', cursor: 'pointer' }}>Products</a>
-                <a onClick={() => navigate('/about')} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>About Us</a>
-                <a onClick={() => navigate('/solutions')} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>Solutions</a>
-                <a style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>Support</a>
+            <div style={{ display: 'flex', gap: '2rem', color: 'var(--color-text-muted)', alignItems: 'center' }}>
+                {!isSearchOpen ? (
+                    <>
+                        <a onClick={() => navigate('/')} style={{ color: 'var(--color-text-main)', cursor: 'pointer' }}>Products</a>
+                        <a onClick={() => navigate('/about')} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>About Us</a>
+                        <a onClick={() => navigate('/solutions')} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>Solutions</a>
+                        <a style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}>Support</a>
+                    </>
+                ) : (
+                    <form onSubmit={handleSearch} style={{ position: 'relative', width: '300px' }}>
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search by brand or name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onBlur={() => !searchQuery && setIsSearchOpen(false)}
+                            style={{
+                                width: '100%',
+                                padding: '0.6rem 1rem 0.6rem 2.5rem',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--color-gold)',
+                                borderRadius: '20px',
+                                color: 'white',
+                                outline: 'none',
+                                fontSize: '0.9rem'
+                            }}
+                        />
+                        <Search size={18} style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-gold)' }} />
+                        <button type="submit" style={{ display: 'none' }}>Search</button>
+                    </form>
+                )}
             </div>
             <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--color-gold)', alignItems: 'center' }}>
-                <Search size={24} style={{ cursor: 'pointer' }} />
+                <Search 
+                    size={24} 
+                    style={{ cursor: 'pointer', display: isSearchOpen ? 'none' : 'block' }} 
+                    onClick={() => setIsSearchOpen(true)} 
+                />
 
                 <div
                     onClick={() => user ? navigate('/profile') : navigate('/login')}

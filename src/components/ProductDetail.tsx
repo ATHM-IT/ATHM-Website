@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, TrendingUp, Settings, Package, Info } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, ShoppingCart, TrendingUp, Settings, Package, Info, ChevronRight, Star, CheckCircle2, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../context/CartContext';
 
@@ -56,6 +56,22 @@ export const ProductDetail: React.FC = () => {
 
     return (
         <div style={{ padding: '4rem 2rem', minHeight: '80vh', maxWidth: '1200px', margin: '0 auto' }}>
+            {/* Breadcrumb Navigation */}
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                color: 'var(--color-text-muted)', 
+                fontSize: '0.9rem',
+                marginBottom: '2rem' 
+            }}>
+                <Link to="/" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Home</Link>
+                <ChevronRight size={14} />
+                <span style={{ color: 'var(--color-text-muted)' }}>{product.category}</span>
+                <ChevronRight size={14} />
+                <span style={{ color: 'white', fontWeight: 600 }}>{product.name.split(' ').slice(0, 3).join(' ')}...</span>
+            </div>
+
             <button
                 onClick={() => navigate('/')}
                 style={{
@@ -112,7 +128,8 @@ export const ProductDetail: React.FC = () => {
                         alignItems: 'center',
                         gap: '6px',
                         border: '1px solid var(--color-gold)',
-                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                        zIndex: 10
                     }}>
                         <TrendingUp size={16} /> Live Pricing
                     </div>
@@ -139,7 +156,36 @@ export const ProductDetail: React.FC = () => {
                             <div style={{ fontSize: '2.5rem', color: 'var(--color-gold)', fontWeight: 'bold' }}>
                                 <AnimatedPrice price={product.price || product.basePrice} prefix="R " />
                             </div>
-                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Excl. VAT</div>
+                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Incl. VAT & Fees</div>
+                        </div>
+
+                        {/* Inventory Status (Polish) */}
+                        <div style={{ 
+                            marginBottom: '2rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px 16px',
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: '12px',
+                            border: '1px solid var(--glass-border)'
+                        }}>
+                            {product.stock > 10 ? (
+                                <>
+                                    <CheckCircle2 color="#10b981" size={20} />
+                                    <span style={{ color: '#10b981', fontWeight: 600 }}>In Stock - Ready for Dispatch</span>
+                                </>
+                            ) : product.stock > 0 ? (
+                                <>
+                                    <Clock color="#f59e0b" size={20} />
+                                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>Limited Stock Available ({product.stock})</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Info color="#ef4444" size={20} />
+                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>Out of Stock - Contact for Lead Time</span>
+                                </>
+                            )}
                         </div>
 
                         {/* Tabs */}
@@ -243,16 +289,44 @@ export const ProductDetail: React.FC = () => {
             </div>
 
             {/* Related Products Warning (Placeholder) */}
-            <div style={{ marginTop: '4rem', opacity: 0.6 }}>
-                <h3 style={{ color: 'white', marginBottom: '1rem' }}>Related Products</h3>
+            <div style={{ marginTop: '4rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ color: 'white', fontSize: '1.5rem' }}>Related Products</h3>
+                    <button style={{ background: 'transparent', border: 'none', color: 'var(--color-gold)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        View Category <ChevronRight size={16} />
+                    </button>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
-                    {/* We would map through related items here. For now, empty or mock needed?
-                       Actually, let's just show a simple message or nothing to avoid clutter if no logic exists.
-                       The plan said "Show 3 other products". I'll skip this for now to avoid complexity without a real product list context in this component.
-                   */}
-                    <div style={{ padding: '2rem', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px', textAlign: 'center', color: 'var(--color-text-muted)', gridColumn: 'span 3' }}>
-                        Related products from the {product.category} category would appear here.
+                    <div style={{ padding: '2rem', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', textAlign: 'center', color: 'var(--color-text-muted)', gridColumn: 'span 3' }}>
+                        High-performance {product.category} components that pair well with your selection.
                     </div>
+                </div>
+            </div>
+
+            {/* Social Proof Placeholder (Task 3 Add-on) */}
+            <div style={{ marginTop: '6rem', maxWidth: '800px' }}>
+                <h3 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Star size={24} color="var(--color-gold)" fill="var(--color-gold)" /> Customer Reviews
+                </h3>
+                <div style={{ 
+                    padding: '3rem', 
+                    background: 'rgba(255,255,255,0.02)', 
+                    borderRadius: '24px', 
+                    border: '1px solid var(--glass-border)',
+                    textAlign: 'center'
+                }}>
+                    <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+                        Be the first to review this {product.category.toLowerCase()}.
+                    </p>
+                    <button style={{
+                        padding: '0.8rem 2rem',
+                        background: 'transparent',
+                        border: '1px solid var(--color-gold)',
+                        color: 'var(--color-gold)',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                    }}>Write a Review</button>
                 </div>
             </div>
 

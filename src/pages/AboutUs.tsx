@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Truck, Zap, Server, Users, Award } from 'lucide-react';
+import { ShieldCheck, Truck, Zap, Server, Users, Award, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const FeatureCard = ({ icon, title, description, delay = 0 }: { icon: React.ReactNode, title: string, description: string, delay?: number }) => (
@@ -10,7 +10,7 @@ const FeatureCard = ({ icon, title, description, delay = 0 }: { icon: React.Reac
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6, delay }}
         style={{
-            background: 'var(--glass-bg)',
+            background: 'rgba(255, 255, 255, 0.02)',
             backdropFilter: 'blur(20px)',
             border: '1px solid var(--glass-border)',
             borderRadius: '16px',
@@ -25,18 +25,10 @@ const FeatureCard = ({ icon, title, description, delay = 0 }: { icon: React.Reac
         }}
         whileHover={{
             y: -5,
-            boxShadow: 'var(--shadow-gold)'
+            borderColor: 'var(--color-gold)',
+            background: 'rgba(212, 175, 55, 0.03)'
         }}
     >
-        <div style={{
-            position: 'absolute',
-            top: '-50%',
-            left: '-50%',
-            width: '200%',
-            height: '200%',
-            background: 'radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 50%)',
-            pointerEvents: 'none',
-        }} />
         <div style={{
             background: 'rgba(212, 175, 55, 0.1)',
             padding: '1rem',
@@ -52,175 +44,246 @@ const FeatureCard = ({ icon, title, description, delay = 0 }: { icon: React.Reac
 
 export const AboutUs: React.FC = () => {
     const navigate = useNavigate();
+    
+    // Using the generated premium image
+    const heroImage = '/premium_hardware_showroom_1775248033840.png';
 
     return (
-        <div style={{ minHeight: '100vh', paddingBottom: '4rem', overflow: 'hidden' }}>
+        <div style={{ minHeight: '100vh', paddingBottom: '4rem', overflow: 'hidden', background: '#020205' }}>
             {/* HERO SECTION */}
             <section style={{
                 position: 'relative',
-                padding: '8rem 2rem 6rem',
+                height: '70vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 textAlign: 'center',
-                background: 'radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.1) 0%, transparent 50%)',
+                padding: '0 2rem',
+                overflow: 'hidden'
             }}>
+                {/* Background Image with Overlay */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 0
+                }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'radial-gradient(circle at center, rgba(2, 2, 5, 0.4) 0%, rgba(2, 2, 5, 1) 100%)',
+                        zIndex: 1
+                    }} />
+                    <motion.img
+                        initial={{ scale: 1.1, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 0.7 }}
+                        transition={{ duration: 1.5 }}
+                        src={heroImage}
+                        alt="ATHM Premium Showroom"
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                        }}
+                    />
+                </div>
+
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    style={{ maxWidth: '900px', margin: '0 auto' }}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    style={{ maxWidth: '1000px', position: 'relative', zIndex: 10 }}
                 >
+                    <span style={{ 
+                        color: 'var(--color-gold)', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '4px', 
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        marginBottom: '1rem',
+                        display: 'block'
+                    }}>
+                        Technological Vanguard
+                    </span>
                     <h1 style={{
-                        fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+                        fontSize: 'clamp(2.5rem, 6vw, 5rem)',
                         fontWeight: 800,
                         lineHeight: 1.1,
                         marginBottom: '1.5rem',
-                        background: 'linear-gradient(135deg, #ffffff 0%, #d4af37 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        filter: 'drop-shadow(0 2px 10px rgba(212, 175, 55, 0.2))'
+                        color: 'white',
+                        letterSpacing: '-0.02em'
                     }}>
-                        Powering the Digital Future of South Africa.
+                        Defining Excellence in <br/>
+                        <span style={{ 
+                            background: 'linear-gradient(135deg, #fff 0%, #d4af37 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                        }}>South African Hardware.</span>
                     </h1>
                     <p style={{
                         fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
-                        color: 'var(--color-text-muted)',
-                        maxWidth: '700px',
+                        color: 'rgba(255,255,255,0.7)',
+                        maxWidth: '750px',
                         margin: '0 auto',
                         lineHeight: 1.7,
                         fontWeight: 300
                     }}>
-                        ATHM is a vanguard electronics distributor built on the foundation of uncompromising quality. We bridge the gap between world-class hardware manufacturers and local innovators, gamers, and enterprises.
+                        ATHM is more than a distributor. We are the architects of high-performance infrastructure, bridging the gap between global Tier-1 manufacturers and the local visionaries leading South Africa's digital revolution.
                     </p>
                 </motion.div>
             </section>
 
-            {/* MISSION STATEMENT (GLASSMORPHISM) */}
-            <section style={{ padding: '0 2rem 6rem', maxWidth: '1200px', margin: '0 auto' }}>
+            {/* MISSION STATEMENT (PREMIUM GLASS) */}
+            <section style={{ padding: '0 2rem 8rem', maxWidth: '1300px', margin: '-5rem auto 0', position: 'relative', zIndex: 20 }}>
                 <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.8 }}
                     style={{
-                        background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.4) 100%)',
-                        backdropFilter: 'blur(30px)',
-                        border: '1px solid rgba(212, 175, 55, 0.2)',
-                        borderRadius: '24px',
-                        padding: '4rem',
+                        background: 'rgba(10, 10, 15, 0.8)',
+                        backdropFilter: 'blur(40px)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        borderTopColor: 'rgba(212, 175, 55, 0.3)',
+                        borderRadius: '32px',
+                        padding: '5rem 4rem',
                         textAlign: 'center',
-                        position: 'relative',
-                        overflow: 'hidden'
+                        boxShadow: '0 40px 100px rgba(0,0,0,0.5)'
                     }}
                 >
-                    {/* Decorative glowing orb */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '0%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: '300px',
-                        height: '100px',
-                        background: 'var(--color-gold)',
-                        filter: 'blur(100px)',
-                        opacity: 0.15,
-                        pointerEvents: 'none'
-                    }} />
-
-                    <h2 style={{ fontSize: '2.5rem', color: 'white', marginBottom: '2rem' }}>Our Mission</h2>
-                    <p style={{ fontSize: '1.2rem', color: 'var(--color-text-muted)', lineHeight: 1.8, maxWidth: '800px', margin: '0 auto' }}>
-                        In an era defined by computing power, seamless networking, and lightning-fast storage, settling for sub-par hardware is not an option. Our mission is to curate and supply the absolute pinnacle of technological components directly from global suppliers. Whether you are building an enterprise server room or fine-tuning an esports battlestation, ATHM guarantees origin-verified excellence.
-                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+                        <div style={{ width: '40px', height: '2px', background: 'var(--color-gold)' }} />
+                        <h2 style={{ fontSize: '2.5rem', color: 'white', fontWeight: 700 }}>Our Vision</h2>
+                        <p style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, maxWidth: '900px', fontWeight: 300 }}>
+                            In an era where data is the new currency and efficiency is the ultimate competitive advantage, ATHM stands as the guardian of quality. We curate and supply the absolute pinnacle of technological components directly to South Africa's leading enterprises, data centers, and advanced laboratories. Whether you are scaling an AI cluster or securing a nationwide network, we provide the ironclad foundation your mission demands.
+                        </p>
+                        <div style={{ display: 'flex', gap: '3rem', marginTop: '2rem' }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--color-gold)' }}>10k+</div>
+                                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '0.5rem' }}>SKUs Managed</div>
+                            </div>
+                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--color-gold)' }}>24h</div>
+                                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '0.5rem' }}>Dispatch Goal</div>
+                            </div>
+                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--color-gold)' }}>100%</div>
+                                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '0.5rem' }}>ZAR Compliant</div>
+                            </div>
+                        </div>
+                    </div>
                 </motion.div>
             </section>
 
-            {/* WHY CHOOSE US GRID */}
-            <section style={{ padding: '0 2rem 6rem', maxWidth: '1200px', margin: '0 auto' }}>
-                <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                    <h2 style={{ fontSize: '2.5rem', color: 'white' }}>The ATHM Standard</h2>
-                    <div style={{ width: '60px', height: '3px', background: 'var(--color-gold)', margin: '1rem auto' }} />
+            {/* THE ATHM STANDARD GRID */}
+            <section style={{ padding: '0 2rem 8rem', maxWidth: '1300px', margin: '0 auto' }}>
+                <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+                    <h2 style={{ fontSize: '3rem', color: 'white', fontWeight: 800, letterSpacing: '-0.03em' }}>The ATHM Standard</h2>
+                    <p style={{ color: 'var(--color-gold)', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '0.9rem', marginTop: '1rem' }}>No Compromises. Just Performance.</p>
                 </div>
 
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    gap: '2rem'
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                    gap: '2.5rem'
                 }}>
                     <FeatureCard 
                         icon={<Award size={32} />} 
-                        title="Authorized Retailer" 
-                        description="We partner directly with tier-1 global suppliers to guarantee 100% authentic equipment, backed by full manufacturer warranties."
+                        title="Authorized Tier-1 Partner" 
+                        description="We bypass the middlemen. By partnering directly with global manufacturers, we guarantee authentic, origin-verified hardware with full warranty support."
                         delay={0.1}
                     />
                     <FeatureCard 
                         icon={<Truck size={32} />} 
-                        title="Nationwide Logistics" 
-                        description="From Cape Town to Johannesburg, our elite courier network ensures your sensitive hardware arrives safely and rapidly."
+                        title="Elite Nationwide Logistics" 
+                        description="Our proprietary fulfillment network ensures rapid, climate-controlled delivery across South Africa, from Sandton and Umhlanga to the V&A Waterfront."
                         delay={0.2}
                     />
                     <FeatureCard 
                         icon={<ShieldCheck size={32} />} 
-                        title="Ironclad Security" 
-                        description="Enjoy peace of mind with our 256-bit encrypted checkout and ultra-secure payment gateway protocols."
+                        title="Enterprise-Grade Security" 
+                        description="Security is not an afterthought. Our platform utilizes 256-bit encryption and PayFast verified protocols to ensure every transaction is ironclad."
                         delay={0.3}
                     />
                     <FeatureCard 
-                        icon={<Zap size={32} />} 
-                        title="Unmatched Speed" 
-                        description="Our specialized real-time inventory system means the moment a product enters our warehouse, it's ready to process and ship to your door."
+                        icon={<Server size={32} />} 
+                        title="Bulk Infrastructure Sourcing" 
+                        description="We specialize in large-scale deployments. Whether equipping a new office park or a private server farm, we provide the scale required."
                         delay={0.4}
                     />
                     <FeatureCard 
-                        icon={<Server size={32} />} 
-                        title="Enterprise Scale" 
-                        description="Need 100 workstations? 50 miles of Cat6 cable? We specialize in bulk sourcing directly from importers."
+                        icon={<Zap size={32} />} 
+                        title="Real-Time Supply Chain" 
+                        description="Our systems are directly integrated with supplier inventories, providing you with precision accuracy on stock levels and ETA data."
                         delay={0.5}
                     />
                     <FeatureCard 
                         icon={<Users size={32} />} 
-                        title="Expert Consultation" 
-                        description="Our support team consists of hardware enthusiasts and IT professionals ready to assist with complex compatibility queries."
+                        title="Architectural Support" 
+                        description="Our consultants are not just sales reps—they are systems architects. We help you design the solutions you buy from us."
                         delay={0.6}
                     />
                 </div>
             </section>
 
             {/* CALL TO ACTION */}
-            <section style={{ padding: '0 2rem', textAlign: 'center' }}>
+            <section style={{ padding: '0 2rem 6rem' }}>
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     style={{
-                        padding: '4rem 2rem',
-                        background: 'linear-gradient(90deg, #111 0%, #1a1a1a 100%)',
-                        borderRadius: '24px',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        maxWidth: '800px',
-                        margin: '0 auto'
+                        padding: '6rem 2rem',
+                        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(2, 2, 5, 1) 100%)',
+                        borderRadius: '40px',
+                        border: '1px solid rgba(212, 175, 55, 0.2)',
+                        maxWidth: '1000px',
+                        margin: '0 auto',
+                        textAlign: 'center',
+                        position: 'relative',
+                        overflow: 'hidden'
                     }}
                 >
-                    <h2 style={{ fontSize: '2rem', color: 'white', marginBottom: '1rem' }}>Ready to upgrade your arsenal?</h2>
-                    <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem', fontSize: '1.1rem' }}>
-                        Browse our latest shipments of next-gen hardware.
-                    </p>
-                    <button 
-                        onClick={() => navigate('/')}
-                        style={{
-                            padding: '1.2rem 3rem',
-                            fontSize: '1.1rem',
-                            fontWeight: 'bold',
-                            color: 'black',
-                            background: 'var(--color-gold)',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            boxShadow: 'var(--shadow-gold)',
-                            transition: 'transform 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                        Explore Products
-                    </button>
+                    <div style={{ position: 'relative', zIndex: 10 }}>
+                        <h2 style={{ fontSize: '3rem', color: 'white', marginBottom: '1.5rem', fontWeight: 800 }}>Ready to Build the Future?</h2>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '3rem', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+                            Join the elite network of South African enterprises powered by ATHM hardware.
+                        </p>
+                        <button 
+                            onClick={() => navigate('/')}
+                            style={{
+                                padding: '1.2rem 4rem',
+                                fontSize: '1.1rem',
+                                fontWeight: 800,
+                                color: 'black',
+                                background: 'white',
+                                border: 'none',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.background = 'var(--color-gold)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.background = 'white';
+                            }}
+                        >
+                            Explore Collection <ChevronRight size={20} />
+                        </button>
+                    </div>
                 </motion.div>
             </section>
         </div>

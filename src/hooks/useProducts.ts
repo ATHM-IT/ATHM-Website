@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import type { Product } from '../types';
+import { PricingEngine } from '../utils/pricing';
 
 export const useProducts = () => {
     const [products, setProducts] = useState<Product[]>([]);
@@ -51,25 +52,29 @@ export const useProducts = () => {
                 }
             });
 
-            // 4. Map to Product[] and apply markup
+            // 4. Map to Product[] and apply FULL Margin Protection Pricing (Markup + VAT + Fees)
             const mappedProducts: Product[] = Array.from(productGroups.values())
                 .sort((a, b) => a.name.localeCompare(b.name))
-                .map((item: any) => ({
-                    id: item.id,
-                    name: item.name,
-                    description: item.description,
-                    basePrice: item.price,
-                    price: item.price * (1 + markup / 100), // Retail price with markup
-                    category: item.category,
-                    categoryType: 'Hardware',
-                    subCategory: 'General',
-                    brand: item.brand,
-                    stock: item.stock,
-                    supplierId: item.supplier_id || 'unknown',
-                    imageUrl: (!item.image_url || item.image_url.includes('placeholder.com') || item.image_url.includes('1542204165-65bf26472b9b')) 
-                               ? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.brand || item.name || 'Tech')}&background=random&color=fff&font-size=0.33&size=500` 
-                               : item.image_url
-                }));
+                .map((item: any) => {
+                    const finalPrice = PricingEngine.calculateFinalPrice(item.price, markup);
+                    
+                    return {
+                        id: item.id,
+                        name: item.name,
+                        description: item.description,
+                        basePrice: item.price,
+                        price: finalPrice, // Retail price with markup, VAT, and Fees
+                        category: item.category,
+                        categoryType: 'Hardware',
+                        subCategory: 'General',
+                        brand: item.brand,
+                        stock: item.stock,
+                        supplierId: item.supplier_id || 'unknown',
+                        imageUrl: (!item.image_url || item.image_url.includes('placeholder.com') || item.image_url.includes('1542204165-65bf26472b9b')) 
+                                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.brand || item.name || 'Tech')}&background=random&color=fff&font-size=0.33&size=500` 
+                                : item.image_url
+                    };
+                });
 
             setProducts(mappedProducts);
         } catch (err) {
