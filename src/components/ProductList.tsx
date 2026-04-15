@@ -16,7 +16,7 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
     
     // Advanced Filter State
-    const [inStockOnly, setInStockOnly] = useState(false);
+    const [inStockOnly, setInStockOnly] = useState(true);
     const [sortBy, setSortBy] = useState('featured');
     const [minPrice, setMinPrice] = useState<number | ''>('');
     const [maxPrice, setMaxPrice] = useState<number | ''>('');
@@ -53,7 +53,7 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
         let baseProducts = localProducts;
 
         // If no filter or search is active, show the "Featured" collection (exactly 1 product per brand)
-        if (!selectedCategory && !searchQuery && !inStockOnly && minPrice === '' && maxPrice === '' && sortBy === 'featured') {
+        if (!selectedCategory && !searchQuery && inStockOnly && minPrice === '' && maxPrice === '' && sortBy === 'featured') {
             const brandMap = new Map<string, Product>();
             baseProducts.forEach(product => {
                 const brandName = product.brand || 'Unknown';
@@ -153,8 +153,8 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
                         <SlidersHorizontal size={20} color="var(--color-gold)" /> Filters
                     </h3>
 
-                    {/* Stock Filter */}
-                    <div style={{ marginBottom: '1.5rem' }}>
+                    {/* Stock Filter hidden as it is now automatic */}
+                    {/* <div style={{ marginBottom: '1.5rem' }}>
                         <label 
                             style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--color-text-muted)', cursor: 'pointer' }}
                             onClick={() => setInStockOnly(!inStockOnly)}
@@ -162,7 +162,7 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
                             {inStockOnly ? <CheckSquare color="var(--color-gold)" size={20} /> : <Square size={20} />}
                             In Stock Only
                         </label>
-                    </div>
+                    </div> */}
 
                     {/* Price Range Filter */}
                     <div style={{ marginBottom: '1.5rem' }}>

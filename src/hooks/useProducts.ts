@@ -33,21 +33,16 @@ export const useProducts = () => {
                 const existing = productGroups.get(item.name);
                 const isItemAvailable = item.stock > 0;
                 
+                // If the item itself is not available, we skip it entirely for the storefront
+                if (!isItemAvailable) return;
+
                 if (!existing) {
                     productGroups.set(item.name, item);
                 } else {
-                    const isExistingAvailable = existing.stock > 0;
-                    
-                    if (isItemAvailable && !isExistingAvailable) {
+                    // Since we've already skipped out-of-stock items above, 
+                    // we only need to compare prices for the cheapest available option
+                    if (item.price < existing.price) {
                         productGroups.set(item.name, item);
-                    } else if (isItemAvailable && isExistingAvailable) {
-                         if (item.price < existing.price) {
-                             productGroups.set(item.name, item);
-                         }
-                    } else if (!isItemAvailable && !isExistingAvailable) {
-                         if (item.price < existing.price) {
-                             productGroups.set(item.name, item);
-                         }
                     }
                 }
             });
