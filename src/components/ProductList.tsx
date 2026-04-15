@@ -21,6 +21,14 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
     const [minPrice, setMinPrice] = useState<number | ''>('');
     const [maxPrice, setMaxPrice] = useState<number | ''>('');
 
+    // Pagination State
+    const [visibleCount, setVisibleCount] = useState(24);
+
+    // Reset pagination when filters or search change
+    useEffect(() => {
+        setVisibleCount(24);
+    }, [searchQuery, selectedCategory, inStockOnly, minPrice, maxPrice, sortBy]);
+
     // Sync search query with URL param
     useEffect(() => {
         const query = searchParams.get('search');
@@ -214,15 +222,48 @@ export const ProductList: React.FC<ProductListProps> = ({ selectedCategory }) =>
                             </button>
                         </div>
                     ) : (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                            gap: '2rem',
-                        }}>
-                            {filteredProducts.map(product => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
+                        <>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                gap: '2rem',
+                            }}>
+                                {filteredProducts.slice(0, visibleCount).map(product => (
+                                    <ProductCard key={product.id} product={product} />
+                                ))}
+                            </div>
+                            
+                            {visibleCount < filteredProducts.length && (
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
+                                    <button
+                                        onClick={() => setVisibleCount(prev => prev + 24)}
+                                        style={{
+                                            padding: '1rem 3rem',
+                                            background: 'transparent',
+                                            color: 'var(--color-gold)',
+                                            border: '1px solid var(--color-gold)',
+                                            borderRadius: '8px',
+                                            fontSize: '1rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                                            e.currentTarget.style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.2)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'transparent';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    >
+                                        Load More Products
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

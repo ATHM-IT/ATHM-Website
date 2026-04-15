@@ -60,6 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleSpeci
                     <img
                         src={product.imageUrl}
                         alt={product.name}
+                        loading="lazy"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                 </Link>
