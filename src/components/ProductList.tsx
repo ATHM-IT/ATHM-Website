@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ProductCard } from './ProductCard';
 import { useProducts } from '../hooks/useProducts';
-import { Search, Filter, SlidersHorizontal, CheckSquare, Square } from 'lucide-react';
+import { Search, Filter, SlidersHorizontal } from 'lucide-react';
 import type { Product } from '../types';
 
 interface ProductListProps {
