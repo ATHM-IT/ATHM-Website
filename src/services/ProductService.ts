@@ -42,12 +42,17 @@ class ProductService {
                     // Find Column Mappings
                     const colMap = {
                         sku: headers.findIndex(h => h.includes('item code') || h === 'sku'),
-                        name: headers.findIndex(h => h === 'description' || h === 'name'),
+                        name: headers.findIndex(h => h === 'name'),
+                        description: headers.findIndex(h => h === 'description'),
+                        shortDesc: headers.findIndex(h => h === 'shortdesc' || h === 'short description'),
                         price: headers.findIndex(h => h.includes('price (excl vat)') || h === 'price'),
-                        category: headers.findIndex(h => h.includes('category') || h === 'categories'),
+                        category: headers.findIndex(h => h.includes('category') || h === 'categories' || h === 'categoriesalt'),
                         brand: headers.findIndex(h => h === 'brand'),
-                        image: headers.findIndex(h => h.includes('image') || h.includes('featured image')),
-                        stock: headers.findIndex(h => h.includes('cptstock') || h.includes('stock'))
+                        image: headers.findIndex(h => h === 'featured image' || h === 'image'),
+                        stockCPT: headers.findIndex(h => h === 'cptstock'),
+                        stockJHB: headers.findIndex(h => h === 'jhbstock'),
+                        stockDBN: headers.findIndex(h => h === 'dbnstock'),
+                        stockLegacy: headers.findIndex(h => h === 'stock' || h === 'stock level')
                     };
 
                     console.log('Detected Column Mappings:', colMap);
@@ -62,21 +67,40 @@ class ProductService {
                             let rawPrice = row[colMap.price] || '0';
                             const cleanPrice = parseFloat(rawPrice.replace(/[R\s,]/g, '')) || 0;
 
-                            // Extract Stock (Universal handling)
-                            let stock = parseInt(row[colMap.stock]) || 0;
-                            // If it's the old format with JHB/CPT/DBN, try to sum them (simplified for new format)
-                            if (colMap.stock === -1) stock = 10; // Fallback if no stock column found
+                            // Extract Stock: Sum all visible warehouses (CPT + JHB + DBN)
+                            let stock = 0;
+                            if (colMap.stockCPT !== -1) stock += parseInt(row[colMap.stockCPT]) || 0;
+                            if (colMap.stockJHB !== -1) stock += parseInt(row[colMap.stockJHB]) || 0;
+                            if (colMap.stockDBN !== -1) stock += parseInt(row[colMap.stockDBN]) || 0;
+                            
+                            // Fallback to legacy stock column or default
+                            if (stock === 0 && colMap.stockLegacy !== -1) {
+                                stock = parseInt(row[colMap.stockLegacy]) || 0;
+                            }
+                            
+                            if (stock === 0 && colMap.stockCPT === -1 && colMap.stockJHB === -1 && colMap.stockDBN === -1 && colMap.stockLegacy === -1) {
+                                stock = 10; // Default fallback if no columns found
+                            }
 
-                            return {
-                                id: `prod_${supplierId}_${sku.replace(/[^a-zA-Z0-9_\-]/g, '_')}`,
-                                name: row[colMap.name] || 'Unknown Product',
-                                description: row[colMap.name] || '',
+                             // Extract and Combine Descriptions
+                             const rawName = row[colMap.name] || 'Unknown Product';
+                             const rawDesc = row[colMap.description] || '';
+                             const rawShort = colMap.shortDesc !== -1 ? row[colMap.shortDesc] : '';
+                             
+                             // Clean HTML from description if necessary, or keep for rich formatting
+                             // We'll prioritize the long description if available, otherwise short description
+                             const finalDescription = rawDesc || rawShort || rawName;
+
+                             return {
+                                 id: `prod_${supplierId}_${sku.replace(/[^a-zA-Z0-9_\-]/g, '_')}`,
+                                 name: rawName,
+                                 description: finalDescription,
                                 price: cleanPrice,
                                 category: (row[colMap.category] || 'Hardware').split('>')[0].trim(),
                                 brand: row[colMap.brand] || 'Various',
                                 stock: stock,
                                 supplier_id: supplierId,
-                                image_url: row[colMap.image] || 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?auto=format&fit=crop&q=80&w=400'
+                                image_url: row[colMap.image] || null
                             };
                         })
                         .filter(p => p !== null && p.price > 0);

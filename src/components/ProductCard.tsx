@@ -62,6 +62,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onToggleSpeci
                         alt={product.name}
                         loading="lazy"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(product.brand || product.name)}&background=random&color=fff&font-size=0.33&size=500`;
+                        }}
                     />
                 </Link>
 
