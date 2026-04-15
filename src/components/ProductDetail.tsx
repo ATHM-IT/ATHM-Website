@@ -90,7 +90,12 @@ export const ProductDetail: React.FC = () => {
     // Parse the supplier's HTML description to separate the main summary from the technical details
     const processDescription = (html: string) => {
         // Find where the technical lists start (usually marked by FEATURES or SPECIFICATIONS)
-        const splitIndex = html.search(/<(h[1-6]|strong|b)>.*?(FEATURES|SPECIFICATIONS|WHAT’S IN THE BOX|WHAT'S IN THE BOX).*?<\/(h[1-6]|strong|b)>/i);
+        // We look for headers or specific markers like class="specs-section"
+        let splitIndex = html.search(/<div class="specs-section">/i);
+        
+        if (splitIndex === -1) {
+            splitIndex = html.search(/<(h[1-6]|strong|b)>.*?(FEATURES|SPECIFICATIONS|WHAT’S IN THE BOX|WHAT'S IN THE BOX|Quick Specs).*?<\/(h[1-6]|strong|b)>/i);
+        }
         
         if (splitIndex !== -1) {
             return {
