@@ -40,7 +40,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ onSelectCategory }) =>
     };
 
     return (
-        <div style={{
+        <div className="fade-indicator" style={{
             background: 'rgba(10, 10, 15, 0.95)',
             borderBottom: '1px solid var(--glass-border)',
             position: 'sticky',
@@ -48,7 +48,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ onSelectCategory }) =>
             zIndex: 90,
             backdropFilter: 'blur(10px)'
         }}>
-            <div style={{
+            <div className="category-nav-scroll" style={{
                 maxWidth: '1200px',
                 margin: '0 auto',
                 padding: '0 2rem',

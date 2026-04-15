@@ -6,13 +6,14 @@ import { useEditor } from '../context/EditorContext'; // Added this import
 import { useNavigate } from 'react-router-dom';
 
 export const Navbar: React.FC = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const { cart, toggleCart } = useCart();
     const { toggleEditing } = useEditor();
     const navigate = useNavigate();
     const [logoPosition, setLogoPosition] = useState({ x: 20, y: 20 });
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         // Listen for theme changes from the customizer
@@ -72,7 +73,7 @@ export const Navbar: React.FC = () => {
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '2rem', color: 'var(--color-text-muted)', alignItems: 'center' }}>
+            <div className="desktop-only" style={{ display: 'flex', gap: '2rem', color: 'var(--color-text-muted)', alignItems: 'center' }}>
                 {!isSearchOpen ? (
                     <>
                         <a onClick={() => navigate('/')} style={{ color: 'var(--color-text-main)', cursor: 'pointer' }}>Products</a>
@@ -138,6 +139,23 @@ export const Navbar: React.FC = () => {
                                     Dashboard
                                 </span>
                             )}
+                            {user.isAdmin && (
+                                <span
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleEditing();
+                                    }}
+                                    style={{
+                                        fontSize: '0.7rem',
+                                        color: 'var(--color-purple)',
+                                        cursor: 'pointer',
+                                        marginTop: '2px',
+                                        textDecoration: 'underline'
+                                    }}
+                                >
+                                    Editor Mode
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>
@@ -169,8 +187,37 @@ export const Navbar: React.FC = () => {
                         </div>
                     )}
                 </div>
-                <Menu size={24} style={{ cursor: 'pointer' }} onClick={toggleEditing} />
+                <div className="mobile-only">
+                    <Menu size={24} style={{ cursor: 'pointer' }} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+                </div>
             </div>
+
+            {/* Mobile Dropdown Menu */}
+            {isMobileMenuOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    width: '100%',
+                    background: 'var(--color-surface)',
+                    borderBottom: '1px solid var(--glass-border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '1rem 2rem',
+                    gap: '1rem',
+                    zIndex: 99
+                }}>
+                    <a onClick={() => { navigate('/faq'); setIsMobileMenuOpen(false); }} style={{ color: 'white', cursor: 'pointer', fontSize: '1.1rem', padding: '0.5rem 0' }}>FAQ</a>
+                    <a onClick={() => { navigate('/support'); setIsMobileMenuOpen(false); }} style={{ color: 'white', cursor: 'pointer', fontSize: '1.1rem', padding: '0.5rem 0' }}>Support</a>
+                    {user && (
+                        <a onClick={() => { 
+                            logout();
+                            navigate('/login'); 
+                            setIsMobileMenuOpen(false); 
+                        }} style={{ color: 'var(--color-gold)', cursor: 'pointer', fontSize: '1.1rem', padding: '0.5rem 0', fontWeight: 'bold' }}>Sign Out</a>
+                    )}
+                </div>
+            )}
         </nav>
     );
 };

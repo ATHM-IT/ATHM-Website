@@ -13,6 +13,7 @@ import { FeaturesSection } from './components/FeaturesSection';
 import { Footer } from './components/Footer';
 import { CategoryNav } from './components/CategoryNav';
 import { useScrollAnimation } from './hooks/useScrollAnimation';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { AuthProvider } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
@@ -24,6 +25,10 @@ import { AboutUs } from './pages/AboutUs';
 import { Checkout } from './pages/Checkout';
 import { OrderSuccess } from './pages/OrderSuccess';
 import { BrandPage } from './pages/BrandPage';
+import { SharedBuild } from './pages/SharedBuild';
+import { FAQ } from './pages/FAQ';
+import { Support } from './pages/Support';
+import { LegalPage } from './pages/LegalPage';
 
 const Hero = () => {
   const heroImage = '/athm_hero_background_1775248093895.png';
@@ -114,7 +119,7 @@ const Hero = () => {
           Leading South Africa's hardware revolution with high-performance infrastructure, 
           tier-1 global components, and uncompromising IT expertise.
         </p>
-        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+        <div className="hero-buttons-wrapper" style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
           <button style={{
             padding: '1.2rem 3rem',
             background: 'var(--color-gold)',
@@ -141,7 +146,7 @@ const Hero = () => {
               e.currentTarget.style.boxShadow = 'var(--shadow-gold)';
             }}
           >
-            Explore Collection
+            Browse Products
           </button>
           <button 
             onClick={() => window.location.href = '/solutions'}
@@ -252,6 +257,7 @@ function App() {
               <CartDrawer />
               <EditorOverlay />
               <ScrollToTop />
+              <MobileBottomNav />
               <Routes>
                 <Route path="/" element={
                   <>
@@ -274,8 +280,12 @@ function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/build" element={<SharedBuild />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/about" element={<AboutUs />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/legal/:slug" element={<LegalPage />} />
                 <Route path="/solutions" element={<Solutions />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/order-success" element={<OrderSuccess />} />

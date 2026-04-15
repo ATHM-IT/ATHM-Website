@@ -61,6 +61,9 @@ app.post('/api/create-payment-intent', async (req, res) => {
     }
 });
 
+import enrichHandler from '../api/enrich.js';
+app.get('/api/enrich', enrichHandler);
+
 const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => {
     console.log(`Stripe Backend Server listening on port ${PORT}!`);

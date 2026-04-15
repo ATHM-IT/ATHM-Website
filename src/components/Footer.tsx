@@ -1,4 +1,5 @@
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PaymentBadge = ({ name, color }: { name: string, color: string }) => (
     <div style={{
@@ -65,14 +66,19 @@ export const Footer: React.FC = () => {
                 <div>
                     <h4 style={{ color: 'white', marginBottom: '2rem', fontWeight: 700, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Company</h4>
                     <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {['About Us', 'Solutions', 'Contact Us', 'Our Partners'].map(item => (
-                            <li key={item}>
-                                <a href={`/${item.toLowerCase().replace(' ', '-')}`} style={{ color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'color 0.2s', fontSize: '1rem' }}
+                        {[
+                            { name: 'About Us', path: '/about' },
+                            { name: 'Solutions', path: '/solutions' },
+                            { name: 'Contact Us', path: '/support' },
+                            { name: 'Admin Dashboard', path: '/admin' }
+                        ].map(item => (
+                            <li key={item.name}>
+                                <Link to={item.path} style={{ color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'color 0.2s', fontSize: '1rem' }}
                                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-gold)'}
                                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
                                 >
-                                    {item}
-                                </a>
+                                    {item.name}
+                                </Link>
                             </li>
                         ))}
                     </ul>
@@ -82,14 +88,20 @@ export const Footer: React.FC = () => {
                 <div>
                     <h4 style={{ color: 'white', marginBottom: '2rem', fontWeight: 700, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Legal & Support</h4>
                     <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {['Returns Policy', 'Shipping Info', 'Privacy Policy', 'Terms of Service', 'FAQ'].map(item => (
-                            <li key={item}>
-                                <a href="#" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'color 0.2s', fontSize: '1rem' }}
+                        {[
+                            { name: 'Returns Policy', path: '/legal/returns' },
+                            { name: 'Shipping Info', path: '/legal/shipping' },
+                            { name: 'Privacy Policy', path: '/legal/privacy' },
+                            { name: 'Terms of Service', path: '/legal/terms' },
+                            { name: 'FAQ', path: '/faq' }
+                        ].map(item => (
+                            <li key={item.name}>
+                                <Link to={item.path} style={{ color: 'var(--color-text-muted)', textDecoration: 'none', transition: 'color 0.2s', fontSize: '1rem' }}
                                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-gold)'}
                                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
                                 >
-                                    {item}
-                                </a>
+                                    {item.name}
+                                </Link>
                             </li>
                         ))}
                     </ul>

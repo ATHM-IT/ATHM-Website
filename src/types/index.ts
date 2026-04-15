@@ -50,3 +50,13 @@ export interface Order {
     created_at: string;
     order_items?: OrderItem[]; // Relational
 }
+
+export interface Review {
+    id: string;
+    product_id: string;
+    user_id: string;
+    user_name: string;
+    rating: number; // 1-5
+    comment: string;
+    created_at: string;
+}

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
-    Package, Settings, Users, DollarSign, Upload, Edit, Trash2, X, Plus, Smartphone, FileText, CheckCircle, Calculator, ShieldCheck, TrendingUp, Sparkles
+    Package, Settings, Users, DollarSign, Upload, Edit, Trash2, X, Plus, Smartphone, FileText, CheckCircle, Calculator, ShieldCheck, TrendingUp, Sparkles, BarChart2
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { PricingEngine } from '../utils/pricing';
 import type { PriceBreakdown } from '../utils/pricing';
@@ -23,7 +24,7 @@ export const AdminDashboard: React.FC = () => {
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
     const [orders, setOrders] = useState<any[]>([]);
-    const [view, setView] = useState<'products' | 'orders' | 'settings'>('products');
+    const [view, setView] = useState<'products' | 'orders' | 'settings' | 'analytics'>('products');
     const [selectedSupplier, setSelectedSupplier] = useState<string>('syntech');
     const [globalMarkup, setGlobalMarkup] = useState<number>(20);
     const [vatRate, setVatRate] = useState<number>(15);
@@ -41,6 +42,25 @@ export const AdminDashboard: React.FC = () => {
         revenueTrend: '+0%',
         usersTrend: '+0%'
     });
+
+    const analyticsData = React.useMemo(() => {
+        if (!orders || orders.length === 0) return [];
+        
+        const dateMap: { [key: string]: number } = {};
+        orders.forEach(order => {
+            if (['paid', 'shipped', 'delivered'].includes(order.status)) {
+                const dateRaw = new Date(order.created_at);
+                const dateKey = `${dateRaw.getDate()}/${dateRaw.getMonth()+1}`;
+                dateMap[dateKey] = (dateMap[dateKey] || 0) + Number(order.total_amount);
+            }
+        });
+        
+        // Return sorted by date string approximation (fine for recent subset)
+        return Object.keys(dateMap).map(date => ({
+            date,
+            revenue: dateMap[date]
+        }));
+    }, [orders]);
 
     useEffect(() => {
         loadProducts();
@@ -385,6 +405,20 @@ export const AdminDashboard: React.FC = () => {
                 >
                     Orders
                 </button>
+                <button
+                    onClick={() => setView('analytics')}
+                    style={{
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        background: view === 'analytics' ? 'var(--color-gold)' : 'rgba(255,255,255,0.1)',
+                        color: view === 'analytics' ? 'black' : 'white',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        border: 'none'
+                    }}
+                >
+                    Analytics
+                </button>
             </div>
 
             {view === 'products' ? (
@@ -658,6 +692,30 @@ export const AdminDashboard: React.FC = () => {
                         </tbody>
                     </table>
                     {orders.length === 0 && <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>No orders found.</div>}
+                </div>
+            ) : view === 'analytics' ? (
+                <div style={{ background: 'var(--glass-bg)', padding: '2rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+                    <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <BarChart2 size={24} color="var(--color-gold)" /> Revenue Analytics
+                    </h2>
+                    
+                    <div style={{ width: '100%', height: 400, marginTop: '2rem' }}>
+                        {analyticsData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={analyticsData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                    <XAxis dataKey="date" stroke="var(--color-text-muted)" />
+                                    <YAxis stroke="var(--color-text-muted)" />
+                                    <Tooltip contentStyle={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} />
+                                    <Line type="monotone" dataKey="revenue" name="Revenue (R)" stroke="var(--color-gold)" strokeWidth={3} activeDot={{ r: 8 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
+                                No sales data available to chart.
+                            </div>
+                        )}
+                    </div>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>

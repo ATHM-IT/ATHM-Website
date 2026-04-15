@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../context/CartContext';
 
-import type { Product } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import type { Product, Review } from '../types';
 import { AnimatedPrice } from './AnimatedPrice';
 
 export const ProductDetail: React.FC = () => {
@@ -13,8 +15,56 @@ export const ProductDetail: React.FC = () => {
     const { addItem } = useCart();
 
     const { products } = useProducts();
+    const { user } = useAuth();
     const [product, setProduct] = useState<Product | undefined>(undefined);
     const [activeTab, setActiveTab] = useState<'description' | 'specs'>('description');
+    
+    // Reviews State
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviewText, setReviewText] = useState('');
+    const [reviewRating, setReviewRating] = useState(5);
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    useEffect(() => {
+        if (product && isSupabaseConfigured) {
+            const fetchReviews = async () => {
+                const { data } = await supabase.from('reviews').select('*').eq('product_id', product.id).order('created_at', { ascending: false });
+                if (data) setReviews(data);
+            };
+            fetchReviews();
+        }
+    }, [product]);
+
+    const handleSubmitReview = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !product || !reviewText.trim()) return;
+        setIsSubmittingReview(true);
+
+        const newReview = {
+            id: `rev_${Date.now()}`,
+            product_id: product.id,
+            user_id: user.id,
+            user_name: user.name || 'Anonymous User',
+            rating: reviewRating,
+            comment: reviewText.trim(),
+            created_at: new Date().toISOString()
+        };
+
+        if (isSupabaseConfigured) {
+            const { error } = await supabase.from('reviews').insert(newReview);
+            if (!error) {
+                setReviews([newReview as Review, ...reviews]);
+                setReviewText('');
+            } else {
+                alert("Failed to submit review: " + error.message);
+            }
+        } else {
+            // Local fallback
+            setReviews([newReview as Review, ...reviews]);
+            setReviewText('');
+        }
+        setIsSubmittingReview(false);
+    };
 
     useEffect(() => {
         if (id && products.length > 0) {
@@ -296,38 +346,125 @@ export const ProductDetail: React.FC = () => {
                         View Category <ChevronRight size={16} />
                     </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
-                    <div style={{ padding: '2rem', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', textAlign: 'center', color: 'var(--color-text-muted)', gridColumn: 'span 3' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+                    <div style={{ padding: '2rem', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', textAlign: 'center', color: 'var(--color-text-muted)', gridColumn: '1 / -1' }}>
                         High-performance {product.category} components that pair well with your selection.
                     </div>
                 </div>
             </div>
 
-            {/* Social Proof Placeholder (Task 3 Add-on) */}
+            {/* Social Proof */}
             <div style={{ marginTop: '6rem', maxWidth: '800px' }}>
                 <h3 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Star size={24} color="var(--color-gold)" fill="var(--color-gold)" /> Customer Reviews
+                    <Star size={24} color="var(--color-gold)" fill="var(--color-gold)" /> Customer Reviews ({reviews.length})
                 </h3>
+
+                {/* Review Form */}
                 <div style={{ 
-                    padding: '3rem', 
+                    padding: '2rem', 
                     background: 'rgba(255,255,255,0.02)', 
-                    borderRadius: '24px', 
+                    borderRadius: '16px', 
                     border: '1px solid var(--glass-border)',
-                    textAlign: 'center'
+                    marginBottom: '2rem'
                 }}>
-                    <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
-                        Be the first to review this {product.category.toLowerCase()}.
-                    </p>
-                    <button style={{
-                        padding: '0.8rem 2rem',
-                        background: 'transparent',
-                        border: '1px solid var(--color-gold)',
-                        color: 'var(--color-gold)',
-                        borderRadius: '8px',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                    }}>Write a Review</button>
+                    {user ? (
+                        <form onSubmit={handleSubmitReview} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <h4 style={{ color: 'white', marginBottom: '0.5rem' }}>Write a Review</h4>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                {[1, 2, 3, 4, 5].map(star => (
+                                    <Star 
+                                        key={star} 
+                                        size={24} 
+                                        color="var(--color-gold)" 
+                                        fill={star <= reviewRating ? "var(--color-gold)" : "transparent"} 
+                                        onClick={() => setReviewRating(star)}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                ))}
+                            </div>
+                            <textarea
+                                value={reviewText}
+                                onChange={(e) => setReviewText(e.target.value)}
+                                placeholder={`What did you think of the ${product.name}?`}
+                                required
+                                rows={4}
+                                style={{
+                                    width: '100%', padding: '1rem', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', 
+                                    borderRadius: '8px', color: 'white', resize: 'vertical'
+                                }}
+                            />
+                            <button 
+                                type="submit" 
+                                disabled={isSubmittingReview || !reviewText.trim()}
+                                style={{
+                                    alignSelf: 'flex-start', padding: '0.8rem 2rem', background: 'var(--color-gold)', color: 'black', 
+                                    border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: isSubmittingReview || !reviewText.trim() ? 'not-allowed' : 'pointer',
+                                    opacity: isSubmittingReview || !reviewText.trim() ? 0.5 : 1
+                                }}
+                            >
+                                {isSubmittingReview ? 'Submitting...' : 'Post Review'}
+                            </button>
+                        </form>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '1rem' }}>
+                            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Please log in to leave a review.</p>
+                            <button onClick={() => navigate('/login')} style={{ background: 'transparent', border: '1px solid var(--color-gold)', color: 'var(--color-gold)', padding: '0.5rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                Log In To Review
+                            </button>
+                        </div>
+                    )}
                 </div>
+
+                {/* Review List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {reviews.length === 0 ? (
+                        <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                            Be the first to review this {product.category.toLowerCase()}.
+                        </div>
+                    ) : (
+                        reviews.map(review => (
+                            <div key={review.id} style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', background: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <span style={{ fontWeight: 'bold', color: 'white' }}>{review.user_name}</span>
+                                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>{new Date(review.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '4px', marginBottom: '1rem' }}>
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                        <Star key={star} size={14} color="var(--color-gold)" fill={star <= review.rating ? "var(--color-gold)" : "transparent"} />
+                                    ))}
+                                </div>
+                                <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.5 }}>{review.comment}</p>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* Mobile Sticky Add to Cart */}
+            <div className="mobile-only mobile-sticky-cart">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{product.name.split(' ').slice(0, 3).join(' ')}...</span>
+                    <span style={{ color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                        <AnimatedPrice price={product.price || product.basePrice} prefix="R " />
+                    </span>
+                </div>
+                <button
+                    onClick={() => addItem(product)}
+                    style={{
+                        background: 'var(--color-gold)',
+                        color: 'black',
+                        padding: '0.8rem 1.5rem',
+                        fontWeight: 'bold',
+                        borderRadius: '4px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <ShoppingCart size={18} /> Add
+                </button>
             </div>
 
             <style>{`
